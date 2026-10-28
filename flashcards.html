@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tarjetas">
+<meta name="theme-color" content="#fff7e6">
+<title>Spanish Flash Cards - OCHOA School</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overscroll-behavior:none;overflow:hidden;background:#fff7e6;color:#222;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  body{position:fixed;inset:0;display:flex;flex-direction:column;padding:max(12px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom));gap:10px}
+  h1{margin:0;font-size:18px;text-align:center;color:#8a4b00}
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  select{flex:1 1 180px;min-height:48px;font-size:18px;padding:0 12px;border-radius:14px;border:2px solid #d9b36c;background:#fff;color:#222}
+  label.tg{display:flex;align-items:center;gap:8px;font-size:17px;min-height:48px;padding:0 4px}
+  label.tg input{width:26px;height:26px}
+  .count{text-align:center;font-size:17px;color:#6b5a3a}
+  #cardArea{flex:1 1 auto;min-height:200px;perspective:1200px;touch-action:none;overscroll-behavior:none;cursor:pointer;outline:none}
+  #inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .45s}
+  #inner.flip{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;text-align:center;
+    border-radius:26px;border:3px solid #d9b36c;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow-wrap:anywhere;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+  .front{background:#fff}
+  .back{background:#e3f1ff;transform:rotateY(180deg)}
+  .lang{font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#7a6a4a}
+  .big{font-size:clamp(30px,9vw,52px);line-height:1.15;font-weight:700}
+  .note{font-size:18px;color:#444}
+  .hint{font-size:14px;color:#8a7a5a}
+  .btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  button{min-height:64px;font-size:22px;font-weight:700;border-radius:18px;border:2px solid #d9b36c;background:#fff;color:#5a3a00;touch-action:manipulation}
+  button:active{transform:scale(.97);background:#ffe9b8}
+  button.primary{background:#ff9f1c;color:#fff;border-color:#e08500}
+  .deckname{text-align:center;font-size:15px;color:#6b5a3a}
+</style>
+</head>
+<body>
+<h1>Spanish Flash Cards · OCHOA School</h1>
+<div class="controls">
+  <select id="deck" aria-label="Deck"></select>
+  <label class="tg"><input type="checkbox" id="eng"> Start with English</label>
+</div>
+<div class="count" id="count"></div>
+<div id="cardArea" role="button" tabindex="0" aria-label="Flash card, tap to flip">
+  <div id="inner">
+    <div class="face front"><div class="lang" id="fl"></div><div class="big" id="ft"></div><div class="hint">Tap to flip · swipe for next</div></div>
+    <div class="face back"><div class="lang" id="bl"></div><div class="big" id="bt"></div><div class="note" id="bn"></div></div>
+  </div>
+</div>
+<div class="btns">
+  <button id="prev">◀ Previous</button>
+  <button id="next" class="primary">Next ▶</button>
+  <button id="flip">Flip</button>
+  <button id="shuf">Shuffle</button>
+</div>
+<div class="deckname" id="dn"></div>
+<script>
+var CARDS = [{"es":"marrón","en":"brown","decks":["Colors"],"note":"La casa es marrón."},{"es":"verde","en":"green","decks":["Colors"],"note":"El árbol es verde."},{"es":"amarillo","en":"yellow","decks":["Colors"],"note":"El sol es amarillo."},{"es":"blanco","en":"white","decks":["Colors"],"note":"El conejo es blanco."},{"es":"rojo","en":"red","decks":["Colors"],"note":"El corazón es rojo."},{"es":"azul","en":"blue","decks":["Colors"],"note":"El jean es azul."},{"es":"naranja","en":"orange","decks":["Colors"],"note":"El pez es naranja."},{"es":"rosada","en":"pink","decks":["Colors"],"note":"La pelota es rosada."},{"es":"gris","en":"gray","decks":["Colors"],"note":"El perro es gris."},{"es":"morado","en":"purple","decks":["Colors"],"note":"El zapato es morado."},{"es":"casa","en":"house","decks":["Things"],"note":"La casa es marrón."},{"es":"árbol","en":"tree","decks":["Things"],"note":"El árbol es verde."},{"es":"sol","en":"sun","decks":["Things"],"note":"El sol es amarillo."},{"es":"conejo","en":"rabbit","decks":["Things"],"note":"El conejo es blanco."},{"es":"corazón","en":"heart","decks":["Things"],"note":"El corazón es rojo."},{"es":"jean","en":"jeans","decks":["Things"],"note":"El jean es azul."},{"es":"pez","en":"fish","decks":["Things"],"note":"El pez es naranja."},{"es":"pelota","en":"ball","decks":["Things"],"note":"La pelota es rosada."},{"es":"perro","en":"dog","decks":["Things"],"note":"El perro es gris."},{"es":"zapato","en":"shoe","decks":["Things"],"note":"El zapato es morado."},{"es":"abeja","en":"bee","decks":["Things"],"note":"La abeja vuela rápido."},{"es":"abuela","en":"grandma","decks":["Things"],"note":"Mi abuela me ama."},{"es":"araña","en":"spider","decks":["Things"],"note":"La araña sube la pared."},{"es":"avión","en":"airplane","decks":["Things"],"note":"El avión vuela alto."},{"es":"anillo","en":"ring","decks":["Things"],"note":"El anillo es brillante."},{"es":"bananas","en":"bananas","decks":["Things"],"note":"Las bananas son dulces."},{"es":"bebé","en":"baby","decks":["Things"],"note":"El bebé está feliz."},{"es":"bicicleta","en":"bike","decks":["Things"],"note":"La bicicleta tiene ruedas."},{"es":"colectivo","en":"bus","decks":["Things"],"note":"El colectivo lleva a los niños."},{"es":"basura","en":"trash","decks":["Things"],"note":"La basura huele mal."},{"es":"castillo","en":"castle","decks":["Things"],"note":"El castillo es grande."},{"es":"cerdo","en":"pig","decks":["Things"],"note":"El cerdo come mucho."},{"es":"niña","en":"girl","decks":["Things"],"note":"La niña corre rápido."},{"es":"cebra","en":"zebra","decks":["Things"],"note":"La cebra tiene rayas."},{"es":"comida","en":"food","decks":["Things"],"note":"La comida está rica."},{"es":"duende","en":"elf","decks":["Things"],"note":"Ese duende es pequeño."},{"es":"dragón","en":"dragon","decks":["Things"],"note":"El dragón tira fuego."},{"es":"dientes","en":"teeth","decks":["Things"],"note":"Los dientes son blancos."},{"es":"dólar","en":"dollar","decks":["Things"],"note":"Ella tiene un dólar."},{"es":"dulces","en":"candy","decks":["Things"],"note":"Me gustan los dulces."},{"es":"rápido","en":"fast","decks":["Describing words"],"note":"La abeja vuela rápido."},{"es":"ama","en":"loves","decks":["Describing words"],"note":"Mi abuela me ama."},{"es":"sube","en":"climbs","decks":["Describing words"],"note":"La araña sube la pared."},{"es":"alto","en":"high","decks":["Describing words"],"note":"El avión vuela alto."},{"es":"brillante","en":"shiny","decks":["Describing words"],"note":"El anillo es brillante."},{"es":"dulces","en":"sweet","decks":["Describing words"],"note":"Las bananas son dulces."},{"es":"feliz","en":"happy","decks":["Describing words"],"note":"El bebé está feliz."},{"es":"ruedas","en":"wheels","decks":["Describing words"],"note":"La bicicleta tiene ruedas."},{"es":"lleva","en":"takes","decks":["Describing words"],"note":"El colectivo lleva a los niños."},{"es":"mal","en":"bad","decks":["Describing words"],"note":"La basura huele mal."},{"es":"grande","en":"big","decks":["Describing words"],"note":"El castillo es grande."},{"es":"mucho","en":"a lot","decks":["Describing words"],"note":"El cerdo come mucho."},{"es":"corre","en":"runs","decks":["Describing words"],"note":"La niña corre rápido."},{"es":"rayas","en":"stripes","decks":["Describing words"],"note":"La cebra tiene rayas."},{"es":"rica","en":"yummy","decks":["Describing words"],"note":"La comida está rica."},{"es":"pequeño","en":"small","decks":["Describing words"],"note":"Ese duende es pequeño."},{"es":"fuego","en":"fire","decks":["Describing words"],"note":"El dragón tira fuego."},{"es":"blancos","en":"white","decks":["Describing words"],"note":"Los dientes son blancos."},{"es":"tiene","en":"has","decks":["Describing words"],"note":"Ella tiene un dólar."},{"es":"gustan","en":"like","decks":["Describing words"],"note":"Me gustan los dulces."},{"es":"¿Qué estás haciendo?","en":"What are you doing?","decks":["Daily life"],"tag":"Question"},{"es":"Estoy dibujando.","en":"I'm drawing.","decks":["Daily life"],"tag":"Answer"},{"es":"Estoy limpiando.","en":"I'm cleaning.","decks":["Daily life"],"tag":"Answer"},{"es":"Estoy mirando la tele.","en":"I'm watching TV.","decks":["Daily life"],"tag":"Answer"},{"es":"Estoy jugando al fútbol.","en":"I'm playing soccer.","decks":["Daily life"],"tag":"Answer"},{"es":"Estoy jugando con las Barbies.","en":"I'm playing with Barbies.","decks":["Daily life"],"tag":"Answer"},{"es":"Estoy comiendo nuggets de pollo.","en":"I'm eating chicken nuggets.","decks":["Daily life"],"tag":"Answer"},{"es":"Estoy leyendo.","en":"I'm reading.","decks":["Daily life"],"tag":"Answer"},{"es":"¿Qué hiciste hoy?","en":"What did you do today?","decks":["Daily life"],"tag":"Question"},{"es":"jugué","en":"I played","decks":["Daily life"]},{"es":"leí","en":"I read","decks":["Daily life"]},{"es":"comí","en":"I ate","decks":["Daily life"]},{"es":"fui a…","en":"I went to…","decks":["Daily life"]},{"es":"dibujé","en":"I drew","decks":["Daily life"]},{"es":"ayudé","en":"I helped","decks":["Daily life"]},{"es":"¡Hola, hola!","en":"Hello, hello!","decks":["Song phrases"]},{"es":"¡Vamos a cantar!","en":"Let's sing!","decks":["Song phrases"]},{"es":"Che, muy bien!","en":"Hey, very good!","decks":["Song phrases"]},{"es":"¡Hasta luego!","en":"See you later!","decks":["Song phrases"]},{"es":"Gracias.","en":"Thank you.","decks":["Song phrases"]},{"es":"De nada.","en":"You're welcome.","decks":["Song phrases"]},{"es":"Disculpá.","en":"Excuse me.","decks":["Song phrases"]},{"es":"Lo siento.","en":"Sorry.","decks":["Song phrases"]},{"es":"¿Qué es esto?","en":"What is this?","decks":["Song phrases"],"tag":"Question"},{"es":"Ten cuidado.","en":"Be careful.","decks":["Song phrases"]},{"es":"Buenas noches.","en":"Good night.","decks":["Song phrases"]},{"es":"¿Cómo andás?","en":"How are you?","decks":["About me"],"tag":"Question"},{"es":"Estoy bien.","en":"I'm fine.","decks":["About me"],"tag":"Answer"},{"es":"¿Quién sos?","en":"Who are you?","decks":["About me"],"tag":"Question"},{"es":"Me gusta.","en":"I like it.","decks":["About me"]},{"es":"Te quiero.","en":"I love you.","decks":["About me"]},{"es":"Necesito ayuda.","en":"I need help.","decks":["About me"]},{"es":"¿Cuántos años tenés?","en":"How old are you?","decks":["About me","Birthday"],"tag":"Question"},{"es":"Tengo ___ años.","en":"I am ___ years old.","decks":["About me","Birthday"],"note":"Example: Tengo siete años.","tag":"Answer"},{"es":"¿Cuándo es tu cumple?","en":"When is your birthday?","decks":["About me","Birthday"],"tag":"Question"},{"es":"Mi cumple es el ___ de ___.","en":"My birthday is the ___ of ___.","decks":["About me","Birthday"],"note":"Example: Mi cumple es el 19 de octubre.","tag":"Answer"},{"es":"¡Feliz cumpleaños!","en":"Happy birthday!","decks":["Birthday"]},{"es":"¡Feliz cumple!","en":"Happy birthday! (short, friendly)","decks":["Birthday"]},{"es":"¿Qué querés para tu cumple?","en":"What do you want for your birthday?","decks":["Birthday"],"tag":"Question"},{"es":"Quiero ___.","en":"I want ___.","decks":["Birthday"],"note":"Example: Quiero una bici.","tag":"Answer"},{"es":"¿De qué es tu torta?","en":"What flavor is your cake?","decks":["Birthday"],"tag":"Question"},{"es":"Mi torta es de ___.","en":"My cake is ___ (flavor).","decks":["Birthday"],"note":"Example: Mi torta es de dulce de leche.","tag":"Answer"},{"es":"¿A quién invitás?","en":"Who are you inviting?","decks":["Birthday"],"tag":"Question"},{"es":"Invito a ___.","en":"I'm inviting ___.","decks":["Birthday"],"note":"Example: Invito a mi hermana y a mis amigas.","tag":"Answer"},{"es":"torta","en":"cake","decks":["Birthday"]},{"es":"velitas","en":"birthday candles","decks":["Birthday"]},{"es":"regalo","en":"present / gift","decks":["Birthday"]},{"es":"globos","en":"balloons","decks":["Birthday"]},{"es":"fiesta","en":"party","decks":["Birthday"]},{"es":"invitados","en":"guests","decks":["Birthday"]},{"es":"soplar las velitas","en":"to blow out the candles","decks":["Birthday"]},{"es":"¡Que los cumplas feliz!","en":"Happy birthday to you! (the birthday song)","decks":["Birthday"]},{"es":"chocolate","en":"chocolate","decks":["Birthday"]},{"es":"dulce de leche","en":"dulce de leche","decks":["Birthday"]},{"es":"vainilla","en":"vanilla","decks":["Birthday"]},{"es":"frutilla","en":"strawberry","decks":["Birthday"]},{"es":"una muñeca","en":"a doll","decks":["Birthday"]},{"es":"una pelota","en":"a ball","decks":["Birthday"]},{"es":"un libro","en":"a book","decks":["Birthday"]},{"es":"una bici","en":"a bike","decks":["Birthday"]},{"es":"un rompecabezas","en":"a puzzle","decks":["Birthday"]},{"es":"enero","en":"January","decks":["Birthday"]},{"es":"febrero","en":"February","decks":["Birthday"]},{"es":"marzo","en":"March","decks":["Birthday"]},{"es":"abril","en":"April","decks":["Birthday"]},{"es":"mayo","en":"May","decks":["Birthday"]},{"es":"junio","en":"June","decks":["Birthday"]},{"es":"julio","en":"July","decks":["Birthday"]},{"es":"agosto","en":"August","decks":["Birthday"]},{"es":"septiembre","en":"September","decks":["Birthday"]},{"es":"octubre","en":"October","decks":["Birthday"]},{"es":"noviembre","en":"November","decks":["Birthday"]},{"es":"diciembre","en":"December","decks":["Birthday"]}];
+var DECKS = ["All","Colors","Things","Describing words","Daily life","Song phrases","About me","Birthday"];
+var KEY = "ochoa-spanish-flashcards-v1";
+var st = {deck:"All", idx:0, eng:false};
+try { var s = JSON.parse(localStorage.getItem(KEY)||"null"); if (s && DECKS.indexOf(s.deck)>=0) { st.deck=s.deck; st.idx=s.idx|0; st.eng=!!s.eng; } } catch(e){}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(st)); }catch(e){} }
+var flipped=false, perm=null, cards=[];
+function $(id){return document.getElementById(id);}
+function build(){ cards = st.deck==="All" ? CARDS : CARDS.filter(function(x){return x.decks.indexOf(st.deck)>=0;}); }
+function render(){
+  var n=cards.length; if(st.idx<0||st.idx>=n) st.idx=0;
+  var order = (perm&&perm.length===n)?perm:null;
+  var card = cards[order?order[st.idx]:st.idx];
+  var f = st.eng?card.en:card.es, b = st.eng?card.es:card.en;
+  $("fl").textContent=(card.tag?card.tag+" · ":"")+(st.eng?"English":"Español");
+  $("ft").textContent=f;
+  $("bl").textContent=st.eng?"Español":"English";
+  $("bt").textContent=b;
+  $("bn").textContent=card.note||"";
+  $("count").textContent="Card "+(st.idx+1)+" of "+n;
+  $("dn").textContent=(st.deck==="All"?"All decks":st.deck)+(perm?", shuffled":"");
+  $("inner").className=flipped?"flip":"";
+  save();
+}
+function go(d){ var n=cards.length; flipped=false; st.idx=(st.idx+d+n)%n; render(); }
+function flip(){ flipped=!flipped; $("inner").className=flipped?"flip":""; }
+function pick(d){ st.deck=d; st.idx=0; flipped=false; perm=null; build(); render(); }
+function shuffle(){ var n=cards.length,a=[],i,j,t; for(i=0;i<n;i++)a.push(i); for(i=n-1;i>0;i--){j=Math.floor(Math.random()*(i+1));t=a[i];a[i]=a[j];a[j]=t;} perm=a; st.idx=0; flipped=false; render(); }
+
+var sel=$("deck");
+DECKS.forEach(function(d){ var o=document.createElement("option"); o.value=d; var c=d==="All"?CARDS.length:CARDS.filter(function(x){return x.decks.indexOf(d)>=0;}).length; o.textContent=d+" ("+c+")"; sel.appendChild(o); });
+sel.value=st.deck; sel.onchange=function(){pick(sel.value);};
+$("eng").checked=st.eng; $("eng").onchange=function(){st.eng=$("eng").checked; flipped=false; render();};
+$("prev").onclick=function(){go(-1);}; $("next").onclick=function(){go(1);};
+$("flip").onclick=flip; $("shuf").onclick=shuffle;
+
+// Swipe handling on the card area (touch events so preventDefault can stop browser navigation gestures)
+var area=$("cardArea"), sx=0, sy=0, tracking=false, moved=false, horiz=false;
+area.addEventListener("touchstart",function(e){ var t=e.touches[0]; sx=t.clientX; sy=t.clientY; tracking=true; moved=false; horiz=false; },{passive:true});
+area.addEventListener("touchmove",function(e){
+  if(!tracking) return; var t=e.touches[0], dx=t.clientX-sx, dy=t.clientY-sy;
+  if(Math.abs(dx)>8||Math.abs(dy)>8) moved=true;
+  if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>6) horiz=true;
+  if(horiz||moved) e.preventDefault();
+},{passive:false});
+area.addEventListener("touchend",function(e){
+  if(!tracking) return; tracking=false; var t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
+  if(Math.abs(dx)>=40&&Math.abs(dx)>Math.abs(dy)*1.3){ e.preventDefault(); go(dx<0?1:-1); }
+  else if(!moved){ e.preventDefault(); flip(); }
+},{passive:false});
+area.addEventListener("touchcancel",function(){tracking=false;});
+// mouse / pointer fallback for desktop
+var mx=0,my=0,mdown=false;
+area.addEventListener("mousedown",function(e){mdown=true;mx=e.clientX;my=e.clientY;});
+window.addEventListener("mouseup",function(e){
+  if(!mdown) return; mdown=false; var dx=e.clientX-mx, dy=e.clientY-my;
+  if(Math.abs(dx)>=40&&Math.abs(dx)>Math.abs(dy)*1.3) go(dx<0?1:-1);
+  else if(Math.abs(dx)<8&&Math.abs(dy)<8&&area.contains(e.target)) flip();
+});
+area.addEventListener("keydown",function(e){
+  if(e.key==="ArrowRight")go(1); else if(e.key==="ArrowLeft")go(-1);
+  else if(e.key===" "||e.key==="Enter"){e.preventDefault();flip();}
+});
+// block page-level scrolling/bounce and pinch zoom
+document.addEventListener("touchmove",function(e){ if(e.target.tagName!=="SELECT") e.preventDefault(); },{passive:false});
+["gesturestart","gesturechange"].forEach(function(g){document.addEventListener(g,function(e){e.preventDefault();});});
+build(); render();
+</script>
+</body>
+</html>
