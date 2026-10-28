@@ -35,6 +35,22 @@
   button{min-height:64px;font-size:22px;font-weight:700;border-radius:18px;border:2px solid #d9b36c;background:#fff;color:#5a3a00;touch-action:manipulation}
   button:active{transform:scale(.97);background:#ffe9b8}
   button.primary{background:#ff9f1c;color:#fff;border-color:#e08500}
+  .hide{display:none!important}
+  #cardWrap{position:relative;flex:1 1 auto;min-height:150px;display:flex}
+  #cardWrap #cardArea{flex:1 1 auto;min-height:0}
+  #check{position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;font-size:min(34vh,200px);font-weight:900;color:#1fa34a;text-shadow:0 4px 18px rgba(31,163,74,.45)}
+  #check.show{display:flex;animation:pop .45s ease-out}
+  @keyframes pop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
+  #say{display:flex;align-items:center;gap:14px;min-height:96px}
+  #mic{flex:0 0 auto;width:88px;height:88px;min-height:88px;border-radius:50%;font-size:42px;padding:0;background:#ff9f1c;color:#fff;border:3px solid #e08500;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+  #mic.listening{background:#e53935;border-color:#b71c1c;animation:pulse 1s infinite}
+  #mic:disabled{opacity:.5}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(229,57,53,.6)}100%{box-shadow:0 0 0 24px rgba(229,57,53,0)}}
+  #sayText{flex:1 1 auto;min-width:0}
+  #status{font-size:20px;font-weight:700;color:#5a3a00}
+  #status.ok{color:#1fa34a}
+  #status.warn{color:#e07b00}
+  #heard{font-size:17px;color:#555;margin-top:4px;min-height:22px;overflow-wrap:anywhere}
   .deckname{text-align:center;font-size:15px;color:#6b5a3a}
 </style>
 </head>
@@ -42,14 +58,20 @@
 <h1>Spanish Flash Cards · OCHOA School</h1>
 <div class="controls">
   <select id="deck" aria-label="Deck"></select>
-  <label class="tg"><input type="checkbox" id="eng"> Start with English</label>
+  <label class="tg" id="engLbl"><input type="checkbox" id="eng"> Start with English</label>
+  <label class="tg"><input type="checkbox" id="saymode"> 🎤 Say it mode</label>
 </div>
 <div class="count" id="count"></div>
-<div id="cardArea" role="button" tabindex="0" aria-label="Flash card, tap to flip">
+<div id="cardWrap"><div id="cardArea" role="button" tabindex="0" aria-label="Flash card, tap to flip">
   <div id="inner">
     <div class="face front"><div class="lang" id="fl"></div><div class="big" id="ft"></div><div class="hint">Tap to flip · swipe for next</div></div>
     <div class="face back"><div class="lang" id="bl"></div><div class="big" id="bt"></div><div class="note" id="bn"></div></div>
   </div>
+</div>
+<div id="check" aria-hidden="true">✓</div></div>
+<div id="say" class="hide">
+  <button id="mic" aria-label="Tap, then say it in Spanish">🎤</button>
+  <div id="sayText"><div id="status"></div><div id="heard"></div></div>
 </div>
 <div class="btns">
   <button id="prev">◀ Previous</button>
@@ -62,8 +84,8 @@
 var CARDS = [{"es":"marrón","en":"brown","decks":["Colors"],"note":"La casa es marrón."},{"es":"verde","en":"green","decks":["Colors"],"note":"El árbol es verde."},{"es":"amarillo","en":"yellow","decks":["Colors"],"note":"El sol es amarillo."},{"es":"blanco","en":"white","decks":["Colors"],"note":"El conejo es blanco."},{"es":"rojo","en":"red","decks":["Colors"],"note":"El corazón es rojo."},{"es":"azul","en":"blue","decks":["Colors"],"note":"El jean es azul."},{"es":"naranja","en":"orange","decks":["Colors"],"note":"El pez es naranja."},{"es":"rosada","en":"pink","decks":["Colors"],"note":"La pelota es rosada."},{"es":"gris","en":"gray","decks":["Colors"],"note":"El perro es gris."},{"es":"morado","en":"purple","decks":["Colors"],"note":"El zapato es morado."},{"es":"casa","en":"house","decks":["Things"],"note":"La casa es marrón."},{"es":"árbol","en":"tree","decks":["Things"],"note":"El árbol es verde."},{"es":"sol","en":"sun","decks":["Things"],"note":"El sol es amarillo."},{"es":"conejo","en":"rabbit","decks":["Things"],"note":"El conejo es blanco."},{"es":"corazón","en":"heart","decks":["Things"],"note":"El corazón es rojo."},{"es":"jean","en":"jeans","decks":["Things"],"note":"El jean es azul."},{"es":"pez","en":"fish","decks":["Things"],"note":"El pez es naranja."},{"es":"pelota","en":"ball","decks":["Things"],"note":"La pelota es rosada."},{"es":"perro","en":"dog","decks":["Things"],"note":"El perro es gris."},{"es":"zapato","en":"shoe","decks":["Things"],"note":"El zapato es morado."},{"es":"abeja","en":"bee","decks":["Things"],"note":"La abeja vuela rápido."},{"es":"abuela","en":"grandma","decks":["Things"],"note":"Mi abuela me ama."},{"es":"araña","en":"spider","decks":["Things"],"note":"La araña sube la pared."},{"es":"avión","en":"airplane","decks":["Things"],"note":"El avión vuela alto."},{"es":"anillo","en":"ring","decks":["Things"],"note":"El anillo es brillante."},{"es":"bananas","en":"bananas","decks":["Things"],"note":"Las bananas son dulces."},{"es":"bebé","en":"baby","decks":["Things"],"note":"El bebé está feliz."},{"es":"bicicleta","en":"bike","decks":["Things"],"note":"La bicicleta tiene ruedas."},{"es":"colectivo","en":"bus","decks":["Things"],"note":"El colectivo lleva a los niños."},{"es":"basura","en":"trash","decks":["Things"],"note":"La basura huele mal."},{"es":"castillo","en":"castle","decks":["Things"],"note":"El castillo es grande."},{"es":"cerdo","en":"pig","decks":["Things"],"note":"El cerdo come mucho."},{"es":"niña","en":"girl","decks":["Things"],"note":"La niña corre rápido."},{"es":"cebra","en":"zebra","decks":["Things"],"note":"La cebra tiene rayas."},{"es":"comida","en":"food","decks":["Things"],"note":"La comida está rica."},{"es":"duende","en":"elf","decks":["Things"],"note":"Ese duende es pequeño."},{"es":"dragón","en":"dragon","decks":["Things"],"note":"El dragón tira fuego."},{"es":"dientes","en":"teeth","decks":["Things"],"note":"Los dientes son blancos."},{"es":"dólar","en":"dollar","decks":["Things"],"note":"Ella tiene un dólar."},{"es":"dulces","en":"candy","decks":["Things"],"note":"Me gustan los dulces."},{"es":"rápido","en":"fast","decks":["Describing words"],"note":"La abeja vuela rápido."},{"es":"ama","en":"loves","decks":["Describing words"],"note":"Mi abuela me ama."},{"es":"sube","en":"climbs","decks":["Describing words"],"note":"La araña sube la pared."},{"es":"alto","en":"high","decks":["Describing words"],"note":"El avión vuela alto."},{"es":"brillante","en":"shiny","decks":["Describing words"],"note":"El anillo es brillante."},{"es":"dulces","en":"sweet","decks":["Describing words"],"note":"Las bananas son dulces."},{"es":"feliz","en":"happy","decks":["Describing words"],"note":"El bebé está feliz."},{"es":"ruedas","en":"wheels","decks":["Describing words"],"note":"La bicicleta tiene ruedas."},{"es":"lleva","en":"takes","decks":["Describing words"],"note":"El colectivo lleva a los niños."},{"es":"mal","en":"bad","decks":["Describing words"],"note":"La basura huele mal."},{"es":"grande","en":"big","decks":["Describing words"],"note":"El castillo es grande."},{"es":"mucho","en":"a lot","decks":["Describing words"],"note":"El cerdo come mucho."},{"es":"corre","en":"runs","decks":["Describing words"],"note":"La niña corre rápido."},{"es":"rayas","en":"stripes","decks":["Describing words"],"note":"La cebra tiene rayas."},{"es":"rica","en":"yummy","decks":["Describing words"],"note":"La comida está rica."},{"es":"pequeño","en":"small","decks":["Describing words"],"note":"Ese duende es pequeño."},{"es":"fuego","en":"fire","decks":["Describing words"],"note":"El dragón tira fuego."},{"es":"blancos","en":"white","decks":["Describing words"],"note":"Los dientes son blancos."},{"es":"tiene","en":"has","decks":["Describing words"],"note":"Ella tiene un dólar."},{"es":"gustan","en":"like","decks":["Describing words"],"note":"Me gustan los dulces."},{"es":"¿Qué estás haciendo?","en":"What are you doing?","decks":["Daily life"],"tag":"Question"},{"es":"Estoy dibujando.","en":"I'm drawing.","decks":["Daily life"],"tag":"Answer"},{"es":"Estoy limpiando.","en":"I'm cleaning.","decks":["Daily life"],"tag":"Answer"},{"es":"Estoy mirando la tele.","en":"I'm watching TV.","decks":["Daily life"],"tag":"Answer"},{"es":"Estoy jugando al fútbol.","en":"I'm playing soccer.","decks":["Daily life"],"tag":"Answer"},{"es":"Estoy jugando con las Barbies.","en":"I'm playing with Barbies.","decks":["Daily life"],"tag":"Answer"},{"es":"Estoy comiendo nuggets de pollo.","en":"I'm eating chicken nuggets.","decks":["Daily life"],"tag":"Answer"},{"es":"Estoy leyendo.","en":"I'm reading.","decks":["Daily life"],"tag":"Answer"},{"es":"¿Qué hiciste hoy?","en":"What did you do today?","decks":["Daily life"],"tag":"Question"},{"es":"jugué","en":"I played","decks":["Daily life"]},{"es":"leí","en":"I read","decks":["Daily life"]},{"es":"comí","en":"I ate","decks":["Daily life"]},{"es":"fui a…","en":"I went to…","decks":["Daily life"]},{"es":"dibujé","en":"I drew","decks":["Daily life"]},{"es":"ayudé","en":"I helped","decks":["Daily life"]},{"es":"¡Hola, hola!","en":"Hello, hello!","decks":["Song phrases"]},{"es":"¡Vamos a cantar!","en":"Let's sing!","decks":["Song phrases"]},{"es":"Che, muy bien!","en":"Hey, very good!","decks":["Song phrases"]},{"es":"¡Hasta luego!","en":"See you later!","decks":["Song phrases"]},{"es":"Gracias.","en":"Thank you.","decks":["Song phrases"]},{"es":"De nada.","en":"You're welcome.","decks":["Song phrases"]},{"es":"Disculpá.","en":"Excuse me.","decks":["Song phrases"]},{"es":"Lo siento.","en":"Sorry.","decks":["Song phrases"]},{"es":"¿Qué es esto?","en":"What is this?","decks":["Song phrases"],"tag":"Question"},{"es":"Ten cuidado.","en":"Be careful.","decks":["Song phrases"]},{"es":"Buenas noches.","en":"Good night.","decks":["Song phrases"]},{"es":"¿Cómo andás?","en":"How are you?","decks":["About me"],"tag":"Question"},{"es":"Estoy bien.","en":"I'm fine.","decks":["About me"],"tag":"Answer"},{"es":"¿Quién sos?","en":"Who are you?","decks":["About me"],"tag":"Question"},{"es":"Me gusta.","en":"I like it.","decks":["About me"]},{"es":"Te quiero.","en":"I love you.","decks":["About me"]},{"es":"Necesito ayuda.","en":"I need help.","decks":["About me"]},{"es":"¿Cuántos años tenés?","en":"How old are you?","decks":["About me","Birthday"],"tag":"Question"},{"es":"Tengo ___ años.","en":"I am ___ years old.","decks":["About me","Birthday"],"note":"Example: Tengo siete años.","tag":"Answer"},{"es":"¿Cuándo es tu cumple?","en":"When is your birthday?","decks":["About me","Birthday"],"tag":"Question"},{"es":"Mi cumple es el ___ de ___.","en":"My birthday is the ___ of ___.","decks":["About me","Birthday"],"note":"Example: Mi cumple es el 19 de octubre.","tag":"Answer"},{"es":"¡Feliz cumpleaños!","en":"Happy birthday!","decks":["Birthday"]},{"es":"¡Feliz cumple!","en":"Happy birthday! (short, friendly)","decks":["Birthday"]},{"es":"¿Qué querés para tu cumple?","en":"What do you want for your birthday?","decks":["Birthday"],"tag":"Question"},{"es":"Quiero ___.","en":"I want ___.","decks":["Birthday"],"note":"Example: Quiero una bici.","tag":"Answer"},{"es":"¿De qué es tu torta?","en":"What flavor is your cake?","decks":["Birthday"],"tag":"Question"},{"es":"Mi torta es de ___.","en":"My cake is ___ (flavor).","decks":["Birthday"],"note":"Example: Mi torta es de dulce de leche.","tag":"Answer"},{"es":"¿A quién invitás?","en":"Who are you inviting?","decks":["Birthday"],"tag":"Question"},{"es":"Invito a ___.","en":"I'm inviting ___.","decks":["Birthday"],"note":"Example: Invito a mi hermana y a mis amigas.","tag":"Answer"},{"es":"torta","en":"cake","decks":["Birthday"]},{"es":"velitas","en":"birthday candles","decks":["Birthday"]},{"es":"regalo","en":"present / gift","decks":["Birthday"]},{"es":"globos","en":"balloons","decks":["Birthday"]},{"es":"fiesta","en":"party","decks":["Birthday"]},{"es":"invitados","en":"guests","decks":["Birthday"]},{"es":"soplar las velitas","en":"to blow out the candles","decks":["Birthday"]},{"es":"¡Que los cumplas feliz!","en":"Happy birthday to you! (the birthday song)","decks":["Birthday"]},{"es":"chocolate","en":"chocolate","decks":["Birthday"]},{"es":"dulce de leche","en":"dulce de leche","decks":["Birthday"]},{"es":"vainilla","en":"vanilla","decks":["Birthday"]},{"es":"frutilla","en":"strawberry","decks":["Birthday"]},{"es":"una muñeca","en":"a doll","decks":["Birthday"]},{"es":"una pelota","en":"a ball","decks":["Birthday"]},{"es":"un libro","en":"a book","decks":["Birthday"]},{"es":"una bici","en":"a bike","decks":["Birthday"]},{"es":"un rompecabezas","en":"a puzzle","decks":["Birthday"]},{"es":"enero","en":"January","decks":["Birthday"]},{"es":"febrero","en":"February","decks":["Birthday"]},{"es":"marzo","en":"March","decks":["Birthday"]},{"es":"abril","en":"April","decks":["Birthday"]},{"es":"mayo","en":"May","decks":["Birthday"]},{"es":"junio","en":"June","decks":["Birthday"]},{"es":"julio","en":"July","decks":["Birthday"]},{"es":"agosto","en":"August","decks":["Birthday"]},{"es":"septiembre","en":"September","decks":["Birthday"]},{"es":"octubre","en":"October","decks":["Birthday"]},{"es":"noviembre","en":"November","decks":["Birthday"]},{"es":"diciembre","en":"December","decks":["Birthday"]}];
 var DECKS = ["All","Colors","Things","Describing words","Daily life","Song phrases","About me","Birthday"];
 var KEY = "ochoa-spanish-flashcards-v1";
-var st = {deck:"All", idx:0, eng:false};
-try { var s = JSON.parse(localStorage.getItem(KEY)||"null"); if (s && DECKS.indexOf(s.deck)>=0) { st.deck=s.deck; st.idx=s.idx|0; st.eng=!!s.eng; } } catch(e){}
+var st = {deck:"All", idx:0, eng:false, say:false};
+try { var s = JSON.parse(localStorage.getItem(KEY)||"null"); if (s && DECKS.indexOf(s.deck)>=0) { st.deck=s.deck; st.idx=s.idx|0; st.eng=!!s.eng; st.say=!!s.say; } } catch(e){}
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(st)); }catch(e){} }
 var flipped=false, perm=null, cards=[];
 function $(id){return document.getElementById(id);}
@@ -72,26 +94,28 @@ function render(){
   var n=cards.length; if(st.idx<0||st.idx>=n) st.idx=0;
   var order = (perm&&perm.length===n)?perm:null;
   var card = cards[order?order[st.idx]:st.idx];
-  var f = st.eng?card.en:card.es, b = st.eng?card.es:card.en;
-  $("fl").textContent=(card.tag?card.tag+" · ":"")+(st.eng?"English":"Español");
+  var eng = st.say ? true : st.eng;
+  var f = eng?card.en:card.es, b = eng?card.es:card.en;
+  $("fl").textContent=(card.tag?card.tag+" · ":"")+(eng?"English":"Español");
   $("ft").textContent=f;
-  $("bl").textContent=st.eng?"Español":"English";
+  $("bl").textContent=eng?"Español":"English";
   $("bt").textContent=b;
   $("bn").textContent=card.note||"";
-  $("count").textContent="Card "+(st.idx+1)+" of "+n;
+  $("count").textContent="Card "+(st.idx+1)+" of "+n+(st.say?"  ·  Score "+score.c+"/"+score.a:"");
   $("dn").textContent=(st.deck==="All"?"All decks":st.deck)+(perm?", shuffled":"");
   $("inner").className=flipped?"flip":"";
   save();
 }
-function go(d){ var n=cards.length; flipped=false; st.idx=(st.idx+d+n)%n; render(); }
-function flip(){ flipped=!flipped; $("inner").className=flipped?"flip":""; }
-function pick(d){ st.deck=d; st.idx=0; flipped=false; perm=null; build(); render(); }
-function shuffle(){ var n=cards.length,a=[],i,j,t; for(i=0;i<n;i++)a.push(i); for(i=n-1;i>0;i--){j=Math.floor(Math.random()*(i+1));t=a[i];a[i]=a[j];a[j]=t;} perm=a; st.idx=0; flipped=false; render(); }
+function go(d){ var n=cards.length; resetSay(); flipped=false; st.idx=(st.idx+d+n)%n; render(); }
+function flip(){ if(st.say){ revealAnswer(); return; } flipped=!flipped; $("inner").className=flipped?"flip":""; }
+function pick(d){ resetSay(); st.deck=d; st.idx=0; flipped=false; perm=null; build(); render(); }
+function shuffle(){ resetSay(); var n=cards.length,a=[],i,j,t; for(i=0;i<n;i++)a.push(i); for(i=n-1;i>0;i--){j=Math.floor(Math.random()*(i+1));t=a[i];a[i]=a[j];a[j]=t;} perm=a; st.idx=0; flipped=false; render(); }
 
 var sel=$("deck");
 DECKS.forEach(function(d){ var o=document.createElement("option"); o.value=d; var c=d==="All"?CARDS.length:CARDS.filter(function(x){return x.decks.indexOf(d)>=0;}).length; o.textContent=d+" ("+c+")"; sel.appendChild(o); });
 sel.value=st.deck; sel.onchange=function(){pick(sel.value);};
 $("eng").checked=st.eng; $("eng").onchange=function(){st.eng=$("eng").checked; flipped=false; render();};
+$("saymode").checked=st.say; $("saymode").onchange=function(){ st.say=$("saymode").checked; flipped=false; resetSay(); applyMode(); render(); };
 $("prev").onclick=function(){go(-1);}; $("next").onclick=function(){go(1);};
 $("flip").onclick=flip; $("shuf").onclick=shuffle;
 
@@ -125,6 +149,171 @@ area.addEventListener("keydown",function(e){
 // block page-level scrolling/bounce and pinch zoom
 document.addEventListener("touchmove",function(e){ if(e.target.tagName!=="SELECT") e.preventDefault(); },{passive:false});
 ["gesturestart","gesturechange"].forEach(function(g){document.addEventListener(g,function(e){e.preventDefault();});});
+
+// ---------- "Say it" speaking mode ----------
+var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+var LANGS = ["es-AR","es-MX","es-ES"], langIdx = 0;
+var score = {c:0, a:0}, misses = 0, rec = null, sess = 0, listening = false, advTimer = null, actx = null;
+var T_SILENCE = 1600, T_SAFETY = 6000;
+var timers = {sil:null, safe:null};
+
+function setStatus(msg, cls, heard){
+  var s=$("status"); s.textContent=msg; s.className=cls||"";
+  $("heard").textContent = heard||"";
+}
+function applyMode(){
+  var on = st.say;
+  $("say").className = on ? "" : "hide";
+  $("engLbl").className = on ? "tg hide" : "tg";
+  $("flip").textContent = on ? "Show answer" : "Flip";
+  $("check").className="";
+  if(on){
+    if(!SR){ setStatus("Speaking mode needs speech recognition, which this browser doesn't have. Try Safari on an iPhone/iPad or Chrome.","warn"); $("mic").disabled=true; }
+    else { $("mic").disabled=false; setStatus("Tap the mic and say it in Spanish!",""); }
+  }
+}
+function clearTimers(){ clearTimeout(timers.sil); clearTimeout(timers.safe); timers.sil=timers.safe=null; }
+function stopRec(abort){
+  sess++; clearTimers();
+  if(rec){ var r=rec; rec=null; r.onresult=r.onend=r.onerror=r.onstart=null; try{ abort?r.abort():r.stop(); }catch(e){} }
+  listening=false; $("mic").className="";
+}
+function resetSay(){
+  stopRec(true); clearTimeout(advTimer); advTimer=null; misses=0; $("check").className="";
+  if(st.say) setStatus(SR?"Tap the mic and say it in Spanish!":$("status").textContent, SR?"":"warn");
+}
+function ensureAudio(){
+  try{ var AC=window.AudioContext||window.webkitAudioContext; if(!actx&&AC) actx=new AC(); if(actx&&actx.state==="suspended") actx.resume(); }catch(e){}
+}
+function chime(){
+  try{
+    ensureAudio(); if(!actx) return;
+    [523.25,659.25,783.99,1046.5].forEach(function(f,i){
+      var o=actx.createOscillator(), g=actx.createGain(), t0=actx.currentTime+i*0.11;
+      o.type="sine"; o.frequency.value=f; o.connect(g); g.connect(actx.destination);
+      g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(0.25,t0+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.35);
+      o.start(t0); o.stop(t0+0.4);
+    });
+  }catch(e){}
+}
+
+// ----- grading -----
+function norm(s){
+  s=String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  s=s.replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
+  s=s.replace(/\b([a-z0-9]+)(?: \1\b)+/g,"$1");   // "hola hola" -> "hola"
+  return s;
+}
+function stripArt(s){ return s.replace(/^(?:(?:el|la|los|las|un|una)\s+)+/,""); }
+function lev(a,b){
+  var m=a.length,n=b.length,i,j,p=[],c=[];
+  for(j=0;j<=n;j++)p[j]=j;
+  for(i=1;i<=m;i++){ c[0]=i; for(j=1;j<=n;j++){ c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a.charAt(i-1)===b.charAt(j-1)?0:1)); } p=c.slice(); }
+  return p[n];
+}
+function maxDist(len){ return len<=3?0:Math.round(len*0.2); }
+function partMatches(t, target){
+  if(!target) return true;
+  if((" "+t+" ").indexOf(" "+target+" ")>=0) return true;
+  var tw=t.split(" "), kw=target.split(" ").length, md=maxDist(target.length), k, i;
+  if(lev(t,target)<=md) return true;
+  for(k=Math.max(1,kw-1);k<=kw+1;k++){
+    for(i=0;i+k<=tw.length;i++){ if(lev(tw.slice(i,i+k).join(" "),target)<=md) return true; }
+  }
+  return false;
+}
+function targetParts(es){
+  return es.split("___").map(function(p){ return stripArt(norm(p)); }).filter(function(p){return p.length>0;});
+}
+function gradeOne(heard, es){
+  var t=stripArt(norm(heard));
+  if(!t) return false;
+  var parts=targetParts(es);
+  if(!parts.length) return false;
+  return parts.every(function(p){ return partMatches(t,p); });
+}
+function gradeAny(alts, es){
+  for(var i=0;i<alts.length;i++){ if(gradeOne(alts[i],es)) return true; }
+  return false;
+}
+function curCard(){ var n=cards.length, order=(perm&&perm.length===n)?perm:null; return cards[order?order[st.idx]:st.idx]; }
+
+// ----- listening -----
+function startListening(){
+  ensureAudio();
+  if(!SR){ applyMode(); return; }
+  if(listening) return;                 // it stops itself; no second tap needed
+  clearTimeout(advTimer); advTimer=null; $("check").className="";
+  var my=++sess, lastAlts=null, done=false;
+  var r;
+  try{ r=new SR(); }catch(e){ setStatus("Couldn't start the microphone. Try again.","warn"); return; }
+  rec=r; listening=true;
+  r.lang=LANGS[langIdx]; r.continuous=false; r.interimResults=true; r.maxAlternatives=5;
+  $("mic").className="listening"; setStatus("Listening… say it now!","");
+  function finish(alts){
+    if(done||my!==sess) return; done=true; clearTimers(); stopRec(false); sess++; grade(alts);
+  }
+  function noHear(msg){
+    if(done||my!==sess) return; done=true; clearTimers(); stopRec(true); setStatus(msg||"Didn't hear you, tap to try again","warn");
+  }
+  r.onresult=function(e){
+    if(my!==sess) return;
+    var res=e.results[e.results.length-1], alts=[], j;
+    for(j=0;j<res.length;j++) alts.push(res[j].transcript);
+    // also include other result segments joined (in case it split the phrase)
+    if(e.results.length>1){ var all=[]; for(j=0;j<e.results.length;j++) all.push(e.results[j][0].transcript); alts.push(all.join(" ")); }
+    lastAlts=alts; $("heard").textContent="“"+alts[0]+"”";
+    if(res.isFinal){ finish(alts); return; }
+    clearTimeout(timers.sil);
+    timers.sil=setTimeout(function(){ if(done||my!==sess) return; if(lastAlts) finish(lastAlts); else noHear(); }, T_SILENCE);   // silence: end automatically
+  };
+  r.onerror=function(e){
+    if(my!==sess) return; var err=e&&e.error;
+    if(err==="no-speech"){ noHear(); }
+    else if(err==="aborted"){ if(lastAlts) finish(lastAlts); else noHear(); }
+    else if(err==="not-allowed"||err==="service-not-allowed"){ noHear("The microphone is blocked. Allow it in Safari's settings for this site, then tap to try again."); }
+    else if(err==="language-not-supported"&&langIdx<LANGS.length-1){ langIdx++; done=true; stopRec(true); startListening(); }
+    else if(err==="network"){ noHear("Speech needs an internet connection. Check Wi-Fi and tap to try again."); }
+    else { if(lastAlts) finish(lastAlts); else noHear(); }
+  };
+  r.onend=function(){
+    if(done||my!==sess) return;
+    if(lastAlts) finish(lastAlts); else noHear();
+  };
+  timers.safe=setTimeout(function(){ if(done||my!==sess) return; if(lastAlts) finish(lastAlts); else noHear(); }, T_SAFETY);  // safety timeout
+  try{ r.start(); }
+  catch(e){
+    if(langIdx<LANGS.length-1){ langIdx++; done=true; stopRec(true); startListening(); }
+    else noHear("Couldn't start the microphone. Tap to try again.");
+  }
+}
+function grade(alts){
+  var card=curCard(); score.a++;
+  var ok=gradeAny(alts, card.es);
+  if(ok){
+    score.c++; misses=0;
+    flipped=true; $("inner").className="flip";
+    $("check").className="show"; chime();
+    setStatus("¡Muy bien! Great job!","ok","“"+alts[0]+"”");
+    $("count").textContent="Card "+(st.idx+1)+" of "+cards.length+"  ·  Score "+score.c+"/"+score.a;
+    clearTimeout(advTimer);
+    advTimer=setTimeout(function(){ advTimer=null; go(1); }, 1500);
+  } else {
+    misses++;
+    $("count").textContent="Card "+(st.idx+1)+" of "+cards.length+"  ·  Score "+score.c+"/"+score.a;
+    if(misses>=2){
+      revealAnswer(true,"“"+alts[0]+"”");
+    } else {
+      setStatus("Intentá de nuevo / Try again","warn","I heard: “"+alts[0]+"”");
+    }
+  }
+}
+function revealAnswer(auto,heard){
+  flipped=true; $("inner").className="flip";
+  if(st.say) setStatus(auto?"Here's the answer. Practice saying it!":"Here's the answer. Tap the mic to practice!","warn",heard||"");
+}
+$("mic").onclick=startListening;
+applyMode();
 build(); render();
 </script>
 </body>
